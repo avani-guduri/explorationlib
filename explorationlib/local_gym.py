@@ -122,6 +122,155 @@ class BanditUniform4(BanditEnv):
         return [seed]
 
 
+
+# ---------------------------------------------------------------------------
+# Basic Bandits
+# - A base class,
+# - then several working examples
+# ---------------------------------------------------------------------------
+class BanditPunishmentEnv(gym.Env):
+    """
+    n-armed bandit environment  
+
+    Params
+    ------
+    p_dist : list of lists
+        Each row/inner list represents a particular bandit
+        Each inner list contains three probabilities:
+        the probability that the reward is 1, 0, or -1 (punishment) (in that order)
+    r_dist : list or list of lists of lists
+        1) A list of lists such that each inner list contains 3 possible reward values (1, 0, or -1) or...
+        2) A list where each element is an inner list representing a bandit
+        and each inner list contains three lists such that each of these three lists
+        includes a mean and a standard deviation. The first of the three lists is for reward 1,
+        the second for reward of 0, and the third for a punishment (reward of -1).
+        Looks something like this:
+        [ [ [1mean, 1SD], [0mean, 0SD], [-1mean, -1SD] ] # bandit 1
+          [ [1mean, 1SD], [0mean, 0SD], [-1mean, -1SD] ] # bandit 2
+          [ [1mean, 1SD], [0mean, 0SD], [-1mean, -1SD] ] # bandit 3
+          [ [1mean, 1SD], [0mean, 0SD], [-1mean, -1SD] ] # bandit 4
+        ]
+    """
+    def __init__(self, p_dist, r_dist):
+        if len(p_dist) != len(r_dist):
+            raise ValueError(
+                "Probability and Reward distribution must be the same length")
+
+        if min(p_dist) < 0 or max(p_dist) > 1:
+            raise ValueError("All probabilities must be between 0 and 1")
+
+        for reward in r_dist:
+            if isinstance(reward, list) and reward[1] <= 0:
+                raise ValueError(
+                    "Standard deviation in rewards must all be greater than 0")
+
+        self.p_dist = p_dist
+        self.r_dist = r_dist
+
+        self.n_bandits = len(p_dist)
+        self.action_space = spaces.Discrete(self.n_bandits)
+        self.observation_space = spaces.Discrete(1)
+        self.seed()
+
+    def step(self, action):
+        assert self.action_space.contains(action)
+        self.state = 0
+        self.reward = 0
+        self.done = False
+
+        probabilities = self.p_dist[action]
+        p_reward = probabilities[0]
+        p_neutral = probabilities[1]
+        p_punishment = probabilities[2]
+
+        random_prob = self.np_random.uniform()
+
+        if not isinstance(self.r_dist[action][0], list):
+            if random_prob < p_reward:
+                self.reward = self.r_dist[action][0]
+            elif random_prob < p_reward + p_neutral:
+                self.reward = self.r_dist[action][1]
+            else:
+                self.reward = self.r_dist[action][2]
+        else:
+            if random_prob < p_reward:
+                mean = self.r_dist[action][0][0]
+                sd = self.r_dist[action][0][1]
+                self.reward = self.np_random.normal(mean, sd)
+            elif random_prob < p_reward + p_neutral:
+                mean = self.r_dist[action][1][0]
+                sd = self.r_dist[action][1][1]
+                self.reward = self.np_random.normal(mean, sd)
+            else:
+                mean = self.r_dist[action][2][0]
+                sd = self.r_dist[action][2][1]
+                self.reward = self.np_random.normal(mean, sd)
+
+        return self.state, self.reward, self.done, {}
+
+    def last(self):
+        return self.state, self.reward, self.done, {}
+
+    def reset(self):
+        self.state = 0
+        self.reward = 0
+        self.done = False
+
+    def render(self, mode='human', close=False):
+        pass
+
+
+class BanditPunishmentUniform4(BanditPunishmentEnv):
+    """A 4 armed bandit."""
+    def __init__(self, p_min_reward=0.1, p_max_reward=0.3, p_min_punishment=0.1, 
+                 p_max_punishment=0.3, p_best_reward=0.7, p_best_punishment=0.1, best=2):
+        self.best = [best]
+        self.num_arms = 4
+
+        # ---
+        self.p_min_reward = p_min_reward
+        self.p_max_reward = p_max_reward
+        self.p_min_punishment = p_min_punishment
+        self.p_max_punishment = p_max_punishment
+        self.p_best_reward = p_best_reward
+        self.p_best_punishment = p_best_punishment
+
+        # Generate intial p_dist
+        # (gets overwritten is seed())
+
+        p_dist = []
+        for arm in self.num_arms:
+            reward = self.np.random.uniform(self.p_min_reward, self.p_max_reward)
+            punishment = self.np.random.uniform(self.p_min_punishment, self.p_max_punishment)
+            neutral = 1 - reward - punishment
+            p_dist.append([reward, neutral, punishment])
+
+        p_dist[self.best[0]] = [self.p_best_reward, 1 - self.p_best_reward - self.p_best_punishment, self.p_best_punishment]
+
+        # reward
+        r_dist = []
+        for arm in self.num_arms:
+            r_dist.append([1, 0, -1])
+
+        # !
+        BanditPunishmentEnv.__init__(self, p_dist=p_dist, r_dist=r_dist)
+
+    def seed(self, seed=None):
+        self.np_random, seed = seeding.np_random(seed)
+
+        # Reset p(R) dist with the seed
+        self.p_dist = []
+        for arm in self.num_arms:
+            reward = self.np.random.uniform(self.p_min_reward, self.p_max_reward)
+            punishment = self.np.random.uniform(self.p_min_punishment, self.p_max_punishment)
+            neutral = 1 - reward - punishment
+            self.p_dist.append([reward, neutral, punishment])
+
+        self.p_dist[self.best[0]] = [self.p_best_reward, 1 - self.p_best_reward - self.p_best_punishment, self.p_best_punishment]
+
+        return [seed]
+
+
 class BanditUniform10(BanditEnv):
     """A 4 armed bandit."""
     def __init__(self, p_min=0.1, p_max=0.3, p_best=0.6, best=2):
