@@ -156,13 +156,13 @@ class BanditPunishmentEnv(gym.Env):
             raise ValueError(
                 "Probability and Reward distribution must be the same length")
 
-        if min(p_dist) < 0 or max(p_dist) > 1:
-            raise ValueError("All probabilities must be between 0 and 1")
+        #if min(p_dist) < 0 or max(p_dist) > 1:
+        #    raise ValueError("All probabilities must be between 0 and 1")
 
-        for reward in r_dist:
-            if isinstance(reward, list) and reward[1] <= 0:
-                raise ValueError(
-                    "Standard deviation in rewards must all be greater than 0")
+        #for reward in r_dist:
+        #    if isinstance(reward, list) and reward[1] <= 0:
+        #        raise ValueError(
+        #            "Standard deviation in rewards must all be greater than 0")
 
         self.p_dist = p_dist
         self.r_dist = r_dist
