@@ -240,8 +240,8 @@ class BanditPunishmentUniform4(BanditPunishmentEnv):
 
         p_dist = []
         for arm in range(self.num_arms):
-            reward = self.np.random.uniform(self.p_min_reward, self.p_max_reward)
-            punishment = self.np.random.uniform(self.p_min_punishment, self.p_max_punishment)
+            reward = np.random.uniform(self.p_min_reward, self.p_max_reward)
+            punishment = np.random.uniform(self.p_min_punishment, self.p_max_punishment)
             neutral = 1 - reward - punishment
             p_dist.append([reward, neutral, punishment])
 
@@ -261,8 +261,8 @@ class BanditPunishmentUniform4(BanditPunishmentEnv):
         # Reset p(R) dist with the seed
         self.p_dist = []
         for arm in range(self.num_arms):
-            reward = self.np.random.uniform(self.p_min_reward, self.p_max_reward)
-            punishment = self.np.random.uniform(self.p_min_punishment, self.p_max_punishment)
+            reward = np.random.uniform(self.p_min_reward, self.p_max_reward)
+            punishment = np.random.uniform(self.p_min_punishment, self.p_max_punishment)
             neutral = 1 - reward - punishment
             self.p_dist.append([reward, neutral, punishment])
 
