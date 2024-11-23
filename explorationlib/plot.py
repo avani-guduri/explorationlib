@@ -119,6 +119,38 @@ def plot_bandit(env,
 
     return ax
 
+def plot_bandit_punishment(env,
+                figsize=(3, 3),
+                color="black",
+                alpha=0.6,
+                title=None,
+                ax=None):
+    # Create a fig obj?
+    if ax is None:
+        fig = plt.figure(figsize=figsize)
+        ax = fig.add_subplot(111)
+
+    # Fmt
+    expected_value = []
+    for arm in range(env.n_bandits):
+        expected_value.append((env.p_dist[arm][0] * env.r_dist[arm][0])
+                     + (env.p_dist[arm][1] * env.r_dist[arm][1])
+                     + (env.p_dist[arm][2] * env.r_dist[arm][2]))
+    
+    names = [str(x) for x in range(env.n_bandits)]
+
+    # !
+    plt.bar(names, expected_value, color=color, alpha=alpha)
+    plt.xlabel("Arm")
+    plt.ylabel("Expected value")
+    plt.tight_layout()
+    sns.despine()
+
+    # titles?
+    if title is not None:
+        ax.set_title(title)
+
+    return ax
 
 def plot_bandit_critic(critic,
                        figsize=(3, 3),
